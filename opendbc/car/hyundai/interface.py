@@ -105,6 +105,8 @@ class CarInterface(CarInterfaceBase):
 
       if ret.flags & HyundaiFlags.CAMERA_SCC:
         ret.safetyConfigs[0].safetyParam |= HyundaiSafetyFlags.CAMERA_SCC.value
+      if ret.flags & HyundaiFlags.ALT_LFAHDA:
+        ret.safetyConfigs[0].safetyParam |= HyundaiSafetyFlags.ALT_LFAHDA.value
 
       # These cars have the LFA button on the steering wheel
       if 0x391 in fingerprint[0]:

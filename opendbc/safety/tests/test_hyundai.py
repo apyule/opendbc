@@ -127,6 +127,19 @@ class TestHyundaiSafetyCameraSCC(TestHyundaiSafety):
   BUTTONS_TX_BUS = 2  # tx on 2, rx on 0
   SCC_BUS = 2  # rx on 2
 
+  def test_lfahda_mfc(self):
+    self.assertTrue(self._tx(common.make_msg(0, 0x485, 4)))
+    self.assertFalse(self._tx(common.make_msg(0, 0x485, 8)))
+
+
+class TestHyundaiSafetyCameraSCCAltLfahda(TestHyundaiSafetyCameraSCC):
+  DBC = "hyundai_can_2024_generated"
+  SAFETY_PARAM = HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.ALT_LFAHDA
+
+  def test_lfahda_mfc(self):
+    self.assertTrue(self._tx(common.make_msg(0, 0x485, 8)))
+    self.assertFalse(self._tx(common.make_msg(0, 0x485, 4)))
+
 class TestHyundaiSafetyFCEV(TestHyundaiSafety):
   SAFETY_PARAM = HyundaiSafetyFlags.FCEV_GAS
 
@@ -231,6 +244,19 @@ class TestHyundaiLongitudinalSafetyCameraSCC(HyundaiLongitudinalBase, TestHyunda
 
   def test_disabled_ecu_alive(self):
     pass
+
+  def test_lfahda_mfc(self):
+    self.assertTrue(self._tx(common.make_msg(0, 0x485, 4)))
+    self.assertFalse(self._tx(common.make_msg(0, 0x485, 8)))
+
+
+class TestHyundaiLongitudinalSafetyCameraSCCAltLfahda(TestHyundaiLongitudinalSafetyCameraSCC):
+  DBC = "hyundai_can_2024_generated"
+  SAFETY_PARAM = HyundaiSafetyFlags.LONG | HyundaiSafetyFlags.CAMERA_SCC | HyundaiSafetyFlags.ALT_LFAHDA
+
+  def test_lfahda_mfc(self):
+    self.assertTrue(self._tx(common.make_msg(0, 0x485, 8)))
+    self.assertFalse(self._tx(common.make_msg(0, 0x485, 4)))
 
 
 class TestHyundaiSafetyFCEVLong(TestHyundaiLongitudinalSafety, TestHyundaiSafetyFCEV):

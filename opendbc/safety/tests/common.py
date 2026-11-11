@@ -1001,7 +1001,8 @@ class SafetyTest(SafetyTestBase):
               continue
             if attr.startswith('TestHyundaiCanfd') and current_test.startswith('TestHyundaiCanfd'):
               continue
-            if {attr, current_test}.issubset({'TestHyundaiLongitudinalSafety', 'TestHyundaiLongitudinalSafetyCameraSCC', 'TestHyundaiSafetyFCEVLong'}):
+            if {attr, current_test}.issubset({'TestHyundaiLongitudinalSafety', 'TestHyundaiLongitudinalSafetyCameraSCC',
+                                              'TestHyundaiLongitudinalSafetyCameraSCCAltLfahda', 'TestHyundaiSafetyFCEVLong'}):
               continue
             volkswagen_shared = ('TestVolkswagenMqb', 'TestVolkswagenMlb', 'TestVolkswagenMeb')
             if attr.startswith(volkswagen_shared) and current_test.startswith(volkswagen_shared):
@@ -1031,6 +1032,11 @@ class SafetyTest(SafetyTestBase):
             if attr.startswith('TestHyundaiLongitudinal'):
               # exceptions for common msgs across different Hyundai CAN platforms
               tx = list(filter(lambda m: m[0] not in [0x420, 0x50A, 0x389, 0x4A2], tx))
+
+            if (attr.startswith('TestHyundai') and not attr.startswith('TestHyundaiCanfd') and
+                current_test.startswith('TestHyundai') and not current_test.startswith('TestHyundaiCanfd')):
+              # LFAHDA_MFC (0x485) is a shared non-actuating HUD message across Hyundai CAN platforms (4 or 8 bytes)
+              tx = list(filter(lambda m: m[0] != 0x485, tx))
             all_tx.append([[m[0], m[1], attr] for m in tx])
 
     # make sure we got all the msgs

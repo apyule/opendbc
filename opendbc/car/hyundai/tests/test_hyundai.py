@@ -45,7 +45,7 @@ CANFD_EXPECTED_ECUS = {Ecu.fwdCamera, Ecu.fwdRadar}
 # CAN-only feature flags that should not appear on CAN FD platforms
 CAN_FEATURE_FLAGS = (HyundaiFlags.CLUSTER_GEARS | HyundaiFlags.TCU_GEARS | HyundaiFlags.CHECKSUM_CRC8 |
                      HyundaiFlags.CHECKSUM_6B | HyundaiFlags.LEGACY | HyundaiFlags.UNSUPPORTED_LONGITUDINAL |
-                     HyundaiFlags.CAMERA_SCC)
+                     HyundaiFlags.CAMERA_SCC | HyundaiFlags.ALT_LFAHDA)
 
 
 def cars_with(flags):
@@ -77,12 +77,14 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for car_model in CAR:
       CP = CarInterface.get_params(car_model, fingerprint, [], False, False, False)
       assert bool(CP.flags & HyundaiFlags.ALT_LIMITS) == bool(CP.safetyConfigs[-1].safetyParam & HyundaiSafetyFlags.ALT_LIMITS)
+      assert bool(CP.flags & HyundaiFlags.ALT_LFAHDA) == bool(CP.safetyConfigs[-1].safetyParam & HyundaiSafetyFlags.ALT_LFAHDA)
 
   def test_camera_scc_no_tester_present(self):
     # CAMERA_SCC and non-LKA CANFD_CAMERA_SCC cars intercept SCC at the camera harness rather than
     # disabling the radar via UDS, so neither CarInterface.init nor CarController should send 0x7d0.
     for car_model, expect_tester_present in (
       (CAR.HYUNDAI_KONA_EV_2022, False),
+      (CAR.HYUNDAI_ELANTRA_HEV_2024, False),
       (CAR.KIA_EV6, False),
       (CAR.HYUNDAI_SONATA, True),
     ):
@@ -113,6 +115,10 @@ class TestHyundaiFingerprint(unittest.TestCase):
       # Test no EV/HEV with cluster/TCU gears (should all use ELECT_GEAR)
       if flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV):
         assert not (flags & (HyundaiFlags.CLUSTER_GEARS | HyundaiFlags.TCU_GEARS))
+
+      # ALT_LFAHDA is only supported on CAMERA_SCC platforms in Panda safety
+      if flags & HyundaiFlags.ALT_LFAHDA:
+        assert flags & HyundaiFlags.CAMERA_SCC
 
       # Test CAN FD car not in CAN feature lists
       if flags & HyundaiFlags.CANFD:

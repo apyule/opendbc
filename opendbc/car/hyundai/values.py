@@ -66,6 +66,7 @@ class HyundaiSafetyFlags(IntFlag):
   CANFD_LKA_STEER_MSG_ALT = 128
   FCEV_GAS = 256
   ALT_LIMITS_2 = 512
+  ALT_LFAHDA = 1024
 
 
 # Hyundai/Kia/Genesis SCC (Smart Cruise Control) and steering architecture:
@@ -149,6 +150,9 @@ class HyundaiFlags(IntFlag):
 
   HAS_BSM = 2 ** 27  # blind spot monitoring
 
+  # 8-byte LFAHDA_MFC message on 2024+ CAN platforms
+  ALT_LFAHDA = 2 ** 28
+
 
 @dataclass
 class HyundaiCarDocs(CarDocs):
@@ -162,6 +166,9 @@ class HyundaiPlatformConfig(PlatformConfig):
   def init(self):
     if self.flags & HyundaiFlags.MANDO_RADAR:
       self.dbc_dict = {Bus.pt: "hyundai_can_generated", Bus.radar: 'hyundai_kia_mando_front_radar_generated'}
+
+    if self.flags & HyundaiFlags.ALT_LFAHDA:
+      self.dbc_dict[Bus.pt] = "hyundai_can_2024_generated"
 
     if self.flags & HyundaiFlags.MIN_STEER_32_MPH:
       self.specs = self.specs.override(minSteerSpeed=32 * CV.MPH_TO_MS)
@@ -217,6 +224,14 @@ class CAR(Platforms):
                     car_parts=CarParts.common([CarHarness.hyundai_k]))],
     CarSpecs(wheelbase=2.72, steerRatio=12.9, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.HYBRID,
+  )
+  HYUNDAI_ELANTRA_HEV_2024 = HyundaiPlatformConfig(
+    [
+      HyundaiCarDocs("Hyundai Elantra Hybrid 2024-25", car_parts=CarParts.common([CarHarness.hyundai_k])),
+      HyundaiCarDocs("Hyundai i30 Hybrid 2024", car_parts=CarParts.common([CarHarness.hyundai_k])),
+    ],
+    CarSpecs(wheelbase=2.72, steerRatio=14.5, tireStiffnessFactor=0.65),
+    flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.CAMERA_SCC | HyundaiFlags.HYBRID | HyundaiFlags.ALT_LFAHDA,
   )
   HYUNDAI_GENESIS = HyundaiPlatformConfig(
     [
