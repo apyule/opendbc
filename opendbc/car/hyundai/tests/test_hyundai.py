@@ -1,7 +1,6 @@
 import unittest
 
-from opendbc.car import gen_empty_fingerprint
-from opendbc.car.structs import CarParams
+from opendbc.car import gen_empty_fingerprint, structs
 from opendbc.car.fw_versions import build_fw_dict
 from opendbc.car.hyundai.interface import CarInterface
 from opendbc.car.hyundai.hyundaicanfd import CanBus
@@ -12,6 +11,8 @@ from opendbc.car.hyundai.values import CAR, DATE_FW_ECUS, FW_QUERY_CONFIG, CANFD
 from opendbc.car.hyundai.fingerprints import FW_VERSIONS
 from opendbc.testing import fuzzy_test
 
+CarControl = structs.CarControl
+CarParams = structs.CarParams
 Ecu = CarParams.Ecu
 
 # Some platforms have date codes in a different format we don't yet parse (or are missing).
@@ -76,6 +77,35 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for car_model in CAR:
       CP = CarInterface.get_params(car_model, fingerprint, [], False, False, False)
       assert bool(CP.flags & HyundaiFlags.ALT_LIMITS) == bool(CP.safetyConfigs[-1].safetyParam & HyundaiSafetyFlags.ALT_LIMITS)
+
+  def test_camera_scc_no_tester_present(self):
+    # CAMERA_SCC and non-LKA CANFD_CAMERA_SCC cars intercept SCC at the camera harness rather than
+    # disabling the radar via UDS, so neither CarInterface.init nor CarController should send 0x7d0.
+    for car_model, expect_tester_present in (
+      (CAR.HYUNDAI_KONA_EV_2022, False),
+      (CAR.KIA_EV6, False),
+      (CAR.HYUNDAI_SONATA, True),
+    ):
+      with self.subTest(car_model=car_model.value):
+        CP = CarInterface.get_params(car_model, gen_empty_fingerprint(), [], True, False, False)
+        assert CP.openpilotLongitudinalControl
+
+        if not expect_tester_present:
+          init_sent = []
+          CarInterface.init(CP, lambda *args, **kwargs: [], init_sent.extend)
+          assert len(init_sent) == 0
+
+        CI = CarInterface(CP)
+        CI.update([])
+        CC = CarControl().as_reader()
+        tester_present_frames = []
+        for frame in range(200):
+          _, can_sends = CI.apply(CC, 0)
+          if any(addr == 0x7d0 for addr, _, _ in can_sends):
+            tester_present_frames.append(frame)
+
+        expected_frames = [0, 100] if expect_tester_present else []
+        assert tester_present_frames == expected_frames
 
   def test_can_features(self):
     for car_model in CAR:
