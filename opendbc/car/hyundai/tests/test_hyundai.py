@@ -84,6 +84,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # disabling the radar via UDS, so neither CarInterface.init nor CarController should send 0x7d0.
     for car_model, expect_tester_present in (
       (CAR.HYUNDAI_KONA_EV_2022, False),
+      (CAR.HYUNDAI_ELANTRA_2024, False),
       (CAR.HYUNDAI_ELANTRA_HEV_2024, False),
       (CAR.KIA_EV6, False),
       (CAR.HYUNDAI_SONATA, True),
